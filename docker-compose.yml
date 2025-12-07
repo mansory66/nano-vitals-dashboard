@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0-alpine
+    container_name: nano-vitals-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: nano_vitals
+      MYSQL_USER: vitals_user
+      MYSQL_PASSWORD: vitals_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nano-vitals-app
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: mysql://vitals_user:vitals_password@mysql:3306/nano_vitals
+      JWT_SECRET: dev-jwt-secret-key
+      VITE_APP_ID: dev-app-id
+      OAUTH_SERVER_URL: https://api.manus.im
+      VITE_OAUTH_PORTAL_URL: https://oauth.manus.im
+    ports:
+      - "3000:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+
+volumes:
+  mysql_data:

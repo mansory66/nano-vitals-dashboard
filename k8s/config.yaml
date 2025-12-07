@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nano-vitals-config
+  labels:
+    app: nano-vitals-dashboard
+data:
+  oauth-server-url: "https://api.manus.im"
+  node-env: "production"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nano-vitals-secrets
+  labels:
+    app: nano-vitals-dashboard
+type: Opaque
+stringData:
+  # Replace these with actual values in production
+  database-url: "mysql://user:password@mysql:3306/nano_vitals"
+  jwt-secret: "your-jwt-secret-key-here"
+  app-id: "your-app-id-here"
+  oauth-client-secret: "your-oauth-client-secret-here"

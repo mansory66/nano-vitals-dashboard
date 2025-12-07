@@ -1,6 +1,7 @@
-import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { desc, and, eq } from "drizzle-orm";
+import { InsertUser, users, websites, coreWebVitals, performanceAlerts, alertEvents, emailSubscriptions, performanceReports } from "../drizzle/schema";
+import type { InsertWebsite, InsertCoreWebVital, InsertPerformanceAlert, InsertAlertEvent, InsertEmailSubscription, InsertPerformanceReport } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +90,96 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+/**
+ * Website queries
+ */
+export async function getUserWebsites(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(users).where(eq(users.id, userId));
+}
+
+export async function getWebsiteById(websiteId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(websites).where(eq(websites.id, websiteId)).limit(1);
+  return result[0];
+}
+
+export async function createWebsite(data: InsertWebsite) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.insert(websites).values(data);
+  return result;
+}
+
+/**
+ * Core Web Vitals queries
+ */
+export async function getLatestMetrics(websiteId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(coreWebVitals).where(eq(coreWebVitals.websiteId, websiteId)).orderBy(desc(coreWebVitals.recordedAt)).limit(limit);
+}
+
+export async function recordMetric(data: InsertCoreWebVital) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return db.insert(coreWebVitals).values(data);
+}
+
+/**
+ * Alert queries
+ */
+export async function getWebsiteAlerts(websiteId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(performanceAlerts).where(eq(performanceAlerts.websiteId, websiteId));
+}
+
+export async function createAlert(data: InsertPerformanceAlert) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return db.insert(performanceAlerts).values(data);
+}
+
+export async function getRecentAlertEvents(websiteId: number, limit: number = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(alertEvents).where(eq(alertEvents.websiteId, websiteId)).orderBy(desc(alertEvents.createdAt)).limit(limit);
+}
+
+/**
+ * Email subscription queries
+ */
+export async function getUserSubscriptions(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(emailSubscriptions).where(eq(emailSubscriptions.userId, userId));
+}
+
+export async function createEmailSubscription(data: InsertEmailSubscription) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return db.insert(emailSubscriptions).values(data);
+}
+
+/**
+ * Performance report queries
+ */
+export async function getLatestReport(websiteId: number, reportType: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(performanceReports).where(
+    and(eq(performanceReports.websiteId, websiteId), eq(performanceReports.reportType, reportType))
+  ).orderBy(desc(performanceReports.createdAt)).limit(1);
+  return result[0];
+}
+
+export async function createReport(data: InsertPerformanceReport) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return db.insert(performanceReports).values(data);
+}
+
+
